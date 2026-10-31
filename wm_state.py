@@ -61,12 +61,6 @@ class EngineJournal:
 
     def recover(self):
         """Una caída cierra el riego; nunca se vuelve a abrir la válvula al reiniciar."""
-        legacy = Path(f"engine_state_{self.station}.json")
-        if legacy.exists():
-            data = json.loads(legacy.read_text(encoding="utf-8"))
-            if not self.get(data["id"]):
-                self.save(data, "IN_PROGRESS")
-            legacy.unlink()  # Solo tras confirmar la importación a SQLite.
         with self.connect() as conn:
             rows = conn.execute("SELECT status,payload FROM runs WHERE status != 'DELIVERED'").fetchall()
         pending = []

@@ -1,7 +1,6 @@
 """CENTRAL: sockets para monitores, Kafka para riegos y panel web."""
 import argparse
 import json
-import math
 import os
 import re
 import socket
@@ -167,8 +166,6 @@ class Central:
                 if not isinstance(entry, dict) or set(entry) != {"id", label}:
                     raise ValueError(f"Cada elemento de {kind} necesita id y {label}")
                 identity = entry["id"]
-                # Solo existe el catálogo del BAT: FO-01 / WS-01. No hacen
-                # falta otra ruta ni reglas distintas para el lanzador retirado.
                 prefix = "FO" if kind == "operators" else "WS"
                 if (not isinstance(identity, str)
                         or not re.fullmatch(prefix + r"-[0-9]{2,6}", identity)
@@ -352,23 +349,14 @@ class Central:
             if run is None:
                 if kind != "END":
                     return
-                if previous:
-                    if previous[1].get("ws") != ws_id:
-                        return
-                    run = previous[1]
-                else:
-                    # Compatibilidad con un checkpoint del Engine anterior a la migración.
-                    if not field(message.get("operator")):
-                        return
-                    run = dict(message, volume=0.0, elapsed=0.0,
-                               start_time=message.get("start_time", datetime.now().isoformat()))
+            if not previous or previous[1].get("ws") != ws_id:
+                return
+            run = previous[1]
             ws = self.stations[ws_id]
             if kind == "STARTED":
                 run.update(started=True, last_event=time.monotonic())
                 self.save(ws)
                 self.reply(run, "ACK", reason="RIEGO_INICIADO")
-            elif kind == "REJECTED":
-                self.finish(ws_id, message.get("reason", "RECHAZADO_ENGINE"))
             elif kind in ("TELEMETRY", "END"):
                 volume, elapsed = float(message["volume"]), float(message["elapsed"])
                 flow = float(message.get("flow", 0))
@@ -472,17 +460,6 @@ class Central:
                             continue
 
                         ws_id = candidate
-
-                        with connection() as conn:
-                            conn.execute("""
-                                INSERT OR IGNORE INTO watering_stations
-                                (id,location) VALUES (?,?)
-                            """, (ws_id, location))
-
-                            row = conn.execute(
-                                "SELECT * FROM watering_stations WHERE id=?",
-                                (ws_id,),
-                            ).fetchone()
 
                         ws = self.stations.setdefault(ws_id, dict(row))
 

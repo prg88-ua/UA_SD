@@ -23,24 +23,11 @@ def save_fo_state(operator_id, data):
     # Un error de disco se comunica: no prometer recuperación sin haber guardado.
     atomic_json(get_fo_state_file(operator_id), data)
 
-
 def load_fo_state(operator_id):
-    path = get_fo_state_file(operator_id)
-    legacy = Path(f"fo_state_{safe_id(operator_id)}.json")
-    if not path.exists() and legacy.exists():
-        data = json.loads(legacy.read_text(encoding="utf-8"))
-        save_fo_state(operator_id, {"pending": data})
-        legacy.unlink()
+    path = get_fo_state_file(operator_id)   
     if not path.exists():
         return {}
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return {"pending": data} if "id" in data else data
-
-
-def clear_fo_state(operator_id):
-    state = load_fo_state(operator_id)
-    state.pop("pending", None)
-    save_fo_state(operator_id, state)
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 class ResponseInbox:
@@ -166,7 +153,7 @@ def check_recovery(producer, consumer, operator_id, active_order, last_completed
         request = dict(saved, type="REQUEST")
         # La fecha se conserva como información; Central recupera por el mismo
         # ID persistente, sin comparar relojes de ordenadores distintos.
-        request.setdefault("submitted_at", saved.get("time", 0))
+        request.setdefault("submitted_at", saved.get("submitted_at", time.time()))
         publish(producer, "fo_requests", request)
         follow_order(producer, consumer, operator_id, request)
 
