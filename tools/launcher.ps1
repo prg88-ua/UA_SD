@@ -154,6 +154,14 @@ function Set-Config {
     $central = Read-Number "Puerto TCP de Central [$($script:Config.CentralPort)]" $script:Config.CentralPort 65535 1
     $kafka = Read-Number "Puerto Kafka [$($script:Config.KafkaPort)]" $script:Config.KafkaPort 65535 1
     $script:Config = @{Role=$role; AwsHost=$awsAddress; WebPort=$web; CentralPort=$central; KafkaPort=$kafka; SourceDir=$script:ProjectDir}
+    if ($script:StationSettings.Count -gt 0 -or @(Get-LocalIdentities).Count -gt 0) {
+        $reset = (Read-Host "Reiniciar contador de IDs y olvidar componentes previos? [s/N]").Trim().ToLowerInvariant()
+        if ($reset -eq 's') {
+            $script:StationSettings = @{}
+            try { Clear-Local } catch {}
+            Write-Host 'IDs y componentes previos reiniciados; empezara a contar desde 01.'
+        }
+    }
     # El registro guarda solo preferencias; no se generan .env, JSON ni carpetas.
     Save-Config
     Write-Host 'Configuracion guardada en este usuario de Windows.'
