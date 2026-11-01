@@ -105,7 +105,7 @@ function Set-ProjectFolder {
     param([string]$Folder)
     $candidate = $Folder.Trim().Trim('"')
     if (!(Test-ProjectFolder $candidate)) {
-        throw 'Elige la carpeta sd que contiene Dockerfile, requirements.txt y los componentes de la practica actualizada.'
+        throw 'Elige la carpeta UA_SD que contiene Dockerfile, requirements.txt y los componentes de la practica actualizada.'
     }
     $script:ProjectDir = (Resolve-Path -LiteralPath $candidate).ProviderPath
     $script:Config.SourceDir = $script:ProjectDir
@@ -117,13 +117,14 @@ function Find-ProjectFolder {
     if ($env:WM_BAT_SOURCE) { Set-ProjectFolder $env:WM_BAT_SOURCE; return }
     $batDirectory = if ($env:WM_BAT_PATH) { Split-Path -Parent $env:WM_BAT_PATH } else { '' }
     $candidates = @($batDirectory)
-    if ($batDirectory) { $candidates += Join-Path $batDirectory 'sd' }
-    $candidates += @((Get-Location).ProviderPath, (Join-Path (Get-Location).ProviderPath 'sd'), $script:Config.SourceDir)
+    # Git clone crea UA_SD: buscar ese nombre permite dejar el BAT junto a la carpeta.
+    if ($batDirectory) { $candidates += Join-Path $batDirectory 'UA_SD' }
+    $candidates += @((Get-Location).ProviderPath, (Join-Path (Get-Location).ProviderPath 'UA_SD'), $script:Config.SourceDir)
     foreach ($folder in $candidates) {
         if (Test-ProjectFolder $folder) { Set-ProjectFolder $folder; return }
     }
-    if (!$Prompt) { throw 'No se encuentra el proyecto. Coloca el BAT dentro de sd o indica su carpeta como segundo argumento.' }
-    Set-ProjectFolder (Read-Host 'Ruta de la carpeta sd con el codigo descargado')
+    if (!$Prompt) { throw 'No se encuentra el proyecto. Coloca el BAT dentro de UA_SD o indica su carpeta como segundo argumento.' }
+    Set-ProjectFolder (Read-Host 'Ruta de la carpeta UA_SD con el codigo descargado')
 }
 
 function Get-ProjectHash {
@@ -489,7 +490,7 @@ function Start-Launcher {
     if ($env:WM_BAT_ACTION -in @('--help', '/?')) {
         Write-Host 'WaterManagement.bat: doble clic, perfil fo o ws, IP de AWS y menu.'
         Write-Host 'Requiere Windows PowerShell 5.1 y Docker Desktop con contenedores Linux.'
-        Write-Host 'Usa el codigo descargado: coloca el BAT dentro de sd o selecciona su carpeta.'
+        Write-Host 'Usa el codigo descargado: coloca el BAT dentro de UA_SD o selecciona su carpeta.'
         Write-Host 'No requiere Python local. --check [carpeta] comprueba las fuentes; --project carpeta abre el menu con esa ruta.'
         return
     }
