@@ -349,9 +349,9 @@ class Central:
             if run is None:
                 if kind != "END":
                     return
-            if not previous or previous[1].get("ws") != ws_id:
-                return
-            run = previous[1]
+                if not previous or previous[1].get("ws") != ws_id:
+                    return
+                run = previous[1]
             ws = self.stations[ws_id]
             if kind == "STARTED":
                 run.update(started=True, last_event=time.monotonic())
